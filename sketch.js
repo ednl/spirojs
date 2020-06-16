@@ -63,6 +63,8 @@ function setup() {
 	stroke(0);
 	bg = color(255, 204, 153);
 
+	createDiv('<small><a href="https://github.com/ednl/spirojs">view code</a></small>');
+
 	centre = {
 		sx: scaleX(0),
 		sy: scaleY(0)
