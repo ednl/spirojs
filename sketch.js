@@ -63,7 +63,8 @@ function setup() {
 	stroke(0);
 	bg = color(255, 204, 153);
 
-	createDiv('<small><a href="https://github.com/ednl/spirojs">view code</a></small>');
+	const div = createDiv('<small><a href="https://twitter.com/ednl">@ednl</a> | <a href="https://github.com/ednl/spirojs">view code</a></small>');
+	div.style('font-family', 'sans-serif');
 
 	centre = {
 		sx: scaleX(0),
