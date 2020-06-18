@@ -8,7 +8,7 @@ let count = 24;
 let speed = 20;
 let angle = 0;
 
-let fgCol, bgCol, slideCount, slideSpeed, divInfo;
+let fgCol, bgCol, slideCount, slideSpeed, divInfo, chkDot, chkCircle, chkLines;
 let centre, diameter, ballSize, step, baseLines, lineWidth;
 
 function scaleX(s) {
@@ -97,8 +97,20 @@ function calcPositions() {
 	slideSpeed.position(scaleX(0.1025), scaleY(-1));
 	slideSpeed.style('width', `${sw}px`);
 	
+	const t = getTextsize();
 	divInfo.style('width', `${width}px`);
-	divInfo.style('font-size', `${getTextsize()}px`);
+	divInfo.style('font-size', `${t}px`);
+
+	chkDot   .position(t, t * 1.2);
+	chkRGB   .position(t, t * 2.4);
+	chkLines .position(t, t * 3.6);
+	chkCircle.position(t, t * 4.8);
+	chkClock .position(t, t * 6.0);
+	chkDot   .style('font-size', `${t}px`);
+	chkRGB   .style('font-size', `${t}px`);
+	chkLines .style('font-size', `${t}px`);
+	chkCircle.style('font-size', `${t}px`);
+	chkClock .style('font-size', `${t}px`);
 }	
 
 // Falling, zero, rising
@@ -110,6 +122,21 @@ function tooth(val) {
 	if (x >= 0.66667)			
 		return round(map(x, 0.66667, 1, 0, 255));
 	return 0;			
+}
+
+function changeDir() {
+	step = -step;
+}
+
+function query(key) {
+	let val = NaN, tmp = [];
+	var items = window.location.search.substr(1).split("&");
+	for (let i = 0; i < items.length; ++i) {
+		tmp = items[i].split("=");
+		if (tmp[0] === key)
+			val = parseInt(decodeURIComponent(tmp[1]));
+	}
+	return val;
 }
 
 function setup() {
@@ -124,13 +151,53 @@ function setup() {
 	divInfo = createDiv('<a href="https://twitter.com/ednl">Twitter</a> | <a href="https://github.com/ednl/spirojs">Github</a> | <a href="https://youtu.be/snHKEpCv0Hk">Numberphile</a>');
 	divInfo.style('font-family', 'Calibri, Arial, sans-serif');
 	divInfo.style('text-align', 'right');
-	
+
+	let intAngle = query('a');
+	if (!isNaN(intAngle))
+		angle = (intAngle % 360) * PI / 180;
+
+	let intCount = query('n');
+	if (!isNaN(intCount) && intCount >= 2 && intCount <= 72)
+		count = intCount;
 	slideCount = createSlider(1, 72, count, 1);
+
+	let intSpeed = query('s');
+	if (!isNaN(intSpeed) && intSpeed >= 0 && intSpeed <= 200)
+		speed = intSpeed;
 	slideSpeed = createSlider(0, 200, speed);
-	step = speed / 1000;
-	
+
+	let valDot = query('d');
+	valDot = isNaN(valDot) ? false : (valDot ? true : false);
+
+	let valRGB = query('r');
+	valRGB = isNaN(valRGB) ? true : (valRGB ? true : false);
+
+	let valLines = query('l');
+	valLines = isNaN(valLines) ? true : (valLines ? true : false);
+
+	let valCircle = query('c');
+	valCircle = isNaN(valCircle) ? true : (valCircle ? true : false);
+
+	let boolClock = query('w');
+	boolClock = isNaN(boolClock) ? false : (boolClock ? true : false);
+
+	chkDot    = createCheckbox('dot', valDot);
+	chkRGB    = createCheckbox('RGB', valRGB);
+	chkLines  = createCheckbox('lines', valLines);
+	chkCircle = createCheckbox('circle', valCircle);
+	chkClock  = createCheckbox('clockwise', boolClock);
+	chkDot.style('font-family', 'Calibri, Arial, sans-serif');
+	chkRGB.style('font-family', 'Calibri, Arial, sans-serif');
+	chkLines.style('font-family', 'Calibri, Arial, sans-serif');
+	chkCircle.style('font-family', 'Calibri, Arial, sans-serif');
+	chkClock.style('font-family', 'Calibri, Arial, sans-serif');
+	chkClock.changed(changeDir);
+
 	newBaselines();
 	calcPositions();
+	step = speed / 1000;
+	if (chkClock.checked())
+		step = -step;
 }
 
 function draw() {
@@ -146,6 +213,8 @@ function draw() {
 	if (v != speed) {
 		speed = v;
 		step = speed / 1000;
+		if (chkClock.checked())
+			step = -step;
 	}
 	
 	// Clear canvas
@@ -161,26 +230,39 @@ function draw() {
 	strokeWeight(lineWidth);
 
 	// Draw unit circle
-	noFill();
-	circle(centre.sx, centre.sy, diameter);
+	if (chkCircle.checked()) {
+		noFill();
+		circle(centre.sx, centre.sy, diameter);
+	}
 
 	// Draw base lines for projection
 	// (two opposite radii = one diameter)
-	for (const base of baseLines)
-		line(base.sx1, base.sy1, base.sx2, base.sy2);
+	if (chkLines.checked()) {
+		for (const base of baseLines)
+			line(base.sx1, base.sy1, base.sx2, base.sy2);
+	}
 
 	// Project circling vector (x,y) on each line
 	// (separate loop or else circles and lines will intersect)
+	if (!chkRGB.checked())
+		fill(255, 255, 0);
 	for (const base of baseLines) {
 		const mag = cos(angle - base.a);  // projected size from angle difference
 		const px = mag * base.x;          // projected vector.x
 		const py = mag * base.y;          // projected vector.y
-		fill(base.c);                     // RGB colour
+		if (chkRGB.checked())
+			fill(base.c);                 // RGB colour
 		circle(scaleX(px), scaleY(py), ballSize);
 	}	
 
+	// Draw dot moving around in a circle
+	if (chkDot.checked()) {
+		fill(255);
+		circle(scaleX(cos(angle)), scaleY(sin(angle)), ballSize - lineWidth * 2);
+	}
+
 	// Advance time
 	angle += step;
-	if (angle >= TWO_PI)
+	if (angle >= TWO_PI || angle <= -TWO_PI)
 		angle = 0;
 }
