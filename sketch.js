@@ -8,7 +8,7 @@ let count = 24;
 let speed = 20;
 let angle = 0;
 
-let fgCol, bgCol, slideCount, slideSpeed, divInfo, chkDot, chkCircle, chkLines;
+let fgCol, bgCol, slideCount, slideSpeed, divInfo, divLink, chkDot, chkCircle, chkLines;
 let centre, diameter, ballSize, step, baseLines, lineWidth;
 
 function scaleX(s) {
@@ -111,7 +111,10 @@ function calcPositions() {
 	chkLines .style('font-size', `${t}px`);
 	chkCircle.style('font-size', `${t}px`);
 	chkClock .style('font-size', `${t}px`);
-}	
+
+	divLink.style('font-size', `${t}px`);
+	divLink.position(t * 1.2, t * 8);
+}
 
 // Falling, zero, rising
 // f(x) = \_/ for x = [0..1]
@@ -126,6 +129,7 @@ function tooth(val) {
 
 function changeDir() {
 	step = -step;
+	makeLink();
 }
 
 function query(key) {
@@ -142,6 +146,25 @@ function query(key) {
 function getBool(name, def) {
 	const val = query(name);
 	return isNaN(val) ? def : (val ? true : false);
+}
+
+function makeLink() {
+	const keys = ['n', 's', 'd', 'r', 'l', 'c', 'w'];
+	let vals = [
+		slideCount.value(),
+		slideSpeed.value(),
+		chkDot.checked() ? 1 : 0,
+		chkRGB.checked() ? 1 : 0,
+		chkLines.checked() ? 1 : 0,
+		chkCircle.checked() ? 1 : 0,
+		chkClock.checked() ? 1 : 0
+	];
+
+	let href = '';
+	for (let i = 0; i < keys.length; ++i) {
+		href += (i == 0 ? '?' : '&amp;') + keys[i] + '=' + vals[i];
+	}
+	divLink.html('<a href="' + href + '">link here</a>');
 }
 
 function setup() {
@@ -164,24 +187,38 @@ function setup() {
 	let intCount = query('n');
 	if (!isNaN(intCount) && intCount >= 2 && intCount <= 72)
 		count = intCount;
-	slideCount = createSlider(1, 72, count, 1);
 
 	let intSpeed = query('s');
 	if (!isNaN(intSpeed) && intSpeed >= 0 && intSpeed <= 200)
 		speed = intSpeed;
+
+	slideCount = createSlider(1, 72, count, 1);
 	slideSpeed = createSlider(0, 200, speed);
+
+	slideCount.changed(makeLink);
+	slideSpeed.changed(makeLink);
 
 	chkDot    = createCheckbox('dot', getBool('d', false));
 	chkRGB    = createCheckbox('RGB', getBool('r', true));
 	chkLines  = createCheckbox('lines', getBool('l', true));
 	chkCircle = createCheckbox('circle', getBool('c', true));
 	chkClock  = createCheckbox('clockwise', getBool('w', false));
+
 	chkDot.style('font-family', 'Calibri, Arial, sans-serif');
 	chkRGB.style('font-family', 'Calibri, Arial, sans-serif');
 	chkLines.style('font-family', 'Calibri, Arial, sans-serif');
 	chkCircle.style('font-family', 'Calibri, Arial, sans-serif');
 	chkClock.style('font-family', 'Calibri, Arial, sans-serif');
+
+	chkDot.changed(makeLink);
+	chkRGB.changed(makeLink);
+	chkLines.changed(makeLink);
+	chkCircle.changed(makeLink);
 	chkClock.changed(changeDir);
+
+	divLink = createDiv();
+	divLink.style('font-family', 'Calibri, Arial, sans-serif');
+	makeLink();
 
 	newBaselines();
 	calcPositions();
