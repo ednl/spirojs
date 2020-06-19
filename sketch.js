@@ -139,6 +139,11 @@ function query(key) {
 	return val;
 }
 
+function getBool(name, def) {
+	const val = query(name);
+	return isNaN(val) ? def : (val ? true : false);
+}
+
 function setup() {
 	const dim = getDimension();
 	createCanvas(dim, dim);
@@ -166,26 +171,11 @@ function setup() {
 		speed = intSpeed;
 	slideSpeed = createSlider(0, 200, speed);
 
-	let valDot = query('d');
-	valDot = isNaN(valDot) ? false : (valDot ? true : false);
-
-	let valRGB = query('r');
-	valRGB = isNaN(valRGB) ? true : (valRGB ? true : false);
-
-	let valLines = query('l');
-	valLines = isNaN(valLines) ? true : (valLines ? true : false);
-
-	let valCircle = query('c');
-	valCircle = isNaN(valCircle) ? true : (valCircle ? true : false);
-
-	let boolClock = query('w');
-	boolClock = isNaN(boolClock) ? false : (boolClock ? true : false);
-
-	chkDot    = createCheckbox('dot', valDot);
-	chkRGB    = createCheckbox('RGB', valRGB);
-	chkLines  = createCheckbox('lines', valLines);
-	chkCircle = createCheckbox('circle', valCircle);
-	chkClock  = createCheckbox('clockwise', boolClock);
+	chkDot    = createCheckbox('dot', getBool('d', false));
+	chkRGB    = createCheckbox('RGB', getBool('r', true));
+	chkLines  = createCheckbox('lines', getBool('l', true));
+	chkCircle = createCheckbox('circle', getBool('c', true));
+	chkClock  = createCheckbox('clockwise', getBool('w', false));
 	chkDot.style('font-family', 'Calibri, Arial, sans-serif');
 	chkRGB.style('font-family', 'Calibri, Arial, sans-serif');
 	chkLines.style('font-family', 'Calibri, Arial, sans-serif');
