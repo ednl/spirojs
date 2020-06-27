@@ -3,13 +3,15 @@ const textMinsize = 10;
 const textScaling = 64;
 const lineWidthSmall = 1;
 const lineWidthLarge = 2;
+const sineStep = 2;  // pixels in x-dir for each point of sine function
 
 let count = 24;
 let speed = 20;
 let angle = 0;
+let sine = [];
 
-let fgCol, bgCol, slideCount, slideSpeed, divInfo, divLink, chkDot, chkCircle, chkLines;
-let centre, diameter, ballSize, step, baseLines, lineWidth;
+let fgCol, bgCol, slideCount, slideSpeed, divInfo, divLink, chkDot, chkFunc, chkCircle, chkLines;
+let centre, diameter, ballSize, step, baseLines, lineWidth, zeroX, sineLen;
 
 function scaleX(s) {
 	return round(map(s, -margin, margin, 0, width));
@@ -44,7 +46,7 @@ function getDimension() {
 	const t1 = textMinsize;
 	const t2 = windowWidth / textScaling;
 	const t3 = windowHeight / (1 + textScaling);
-	const t = ceil(max(t1, min(t2, t3))) * 2;  // factor 2 for sufficient lineheight
+	const t = ceil(max(t1, min(t2, t3))) * 1.5;  // factor 1.5 for sufficient lineheight
 	return min(windowWidth, windowHeight - t);
 }
 
@@ -53,14 +55,14 @@ function windowResized() {
 	resizeCanvas(dim, dim);
 	newBaselines();
 	calcPositions();
-}	
+}
 
 // Preconditions:
 //   meaningful value for global count
 function newBaselines() {
 	baseLines = [];
 	for (let i = 0; i < count; ++i) {
-		const a = i * PI / count;  // baseline angle
+		const a = HALF_PI + i * PI / count;  // baseline angle
 		const x = cos(a);          // baseline vector x
 		const y = sin(a);          // baseline vector y
 		const c = i / count;       // colour fraction
@@ -76,59 +78,71 @@ function newBaselines() {
 				tooth(c + 0.33333),
 				tooth(c + 0.66667),
 				tooth(c)
-			)		
-		});		
-	}		
-}		
+			)
+		});
+	}
+}
 
 // Preconditions:
 //   resized canvas with new width,height
 //   existing dom objects: slideCount, slideSpeed, divInfo
 function calcPositions() {
-	centre = { sx: scaleX(0), sy: scaleY(0) };
+	zeroX = scaleX(0);
+	sineLen = ceil(zeroX / sineStep);
+
+	centre = { sx: zeroX, sy: scaleY(0) };
 	diameter = (scaleX(1) - centre.sx) * 2;
 	ballSize = round(width / 40);
 	lineWidth = width >= 800 ? lineWidthLarge : lineWidthSmall;
 	textSize(getTextsize());
 
-	const sw = scaleX(0.9) - scaleX(0);
+	const sw = scaleX(0.9) - zeroX;
 	slideCount.position(scaleX(-1.025), scaleY(-1));
 	slideCount.style('width', `${sw}px`);
 	slideSpeed.position(scaleX(0.1025), scaleY(-1));
 	slideSpeed.style('width', `${sw}px`);
-	
-	const t = getTextsize();
-	divInfo.style('width', `${width}px`);
-	divInfo.style('font-size', `${t}px`);
 
+	const t = getTextsize();
 	chkDot   .position(t, t * 1.2);
-	chkRGB   .position(t, t * 2.4);
-	chkLines .position(t, t * 3.6);
-	chkCircle.position(t, t * 4.8);
-	chkClock .position(t, t * 6.0);
+	chkFunc  .position(t, t * 2.4);
+	chkRGB   .position(t, t * 3.6);
+	chkLines .position(t, t * 4.8);
+	chkCircle.position(t, t * 6.0);
+	chkClock .position(t, t * 7.2);
 	chkDot   .style('font-size', `${t}px`);
+	chkFunc  .style('font-size', `${t}px`);
 	chkRGB   .style('font-size', `${t}px`);
 	chkLines .style('font-size', `${t}px`);
 	chkCircle.style('font-size', `${t}px`);
 	chkClock .style('font-size', `${t}px`);
 
 	divLink.style('font-size', `${t}px`);
-	divLink.position(t * 1.2, t * 8);
+	divLink.position(t * 1.2, t * 9);
+
+	divInfo.style('width', `${width}px`);
+	divInfo.style('font-size', `${max(textMinsize, t - 4)}px`);
 }
 
 // Falling, zero, rising
 // f(x) = \_/ for x = [0..1]
 function tooth(val) {
 	const x = fract(val);
-	if (x <= 0.33333)
+	if (x <= 0.33333) {
 		return round(map(x, 0, 0.33333, 255, 0));
-	if (x >= 0.66667)			
+	}
+	if (x >= 0.66667) {
 		return round(map(x, 0.66667, 1, 0, 255));
-	return 0;			
+	}
+	return 0;
 }
 
 function changeDir() {
 	step = -step;
+	makeLink();
+}
+
+function changeFunc() {
+	sine = [];
 	makeLink();
 }
 
@@ -137,8 +151,9 @@ function query(key) {
 	var items = window.location.search.substr(1).split("&");
 	for (let i = 0; i < items.length; ++i) {
 		tmp = items[i].split("=");
-		if (tmp[0] === key)
+		if (tmp[0] === key) {
 			val = parseInt(decodeURIComponent(tmp[1]));
+		}
 	}
 	return val;
 }
@@ -149,11 +164,12 @@ function getBool(name, def) {
 }
 
 function makeLink() {
-	const keys = ['n', 's', 'd', 'r', 'l', 'c', 'w'];
+	const keys = ['n', 's', 'd', 'f', 'r', 'l', 'c', 'w'];
 	let vals = [
 		slideCount.value(),
 		slideSpeed.value(),
 		chkDot.checked() ? 1 : 0,
+		chkFunc.checked() ? 1 : 0,
 		chkRGB.checked() ? 1 : 0,
 		chkLines.checked() ? 1 : 0,
 		chkCircle.checked() ? 1 : 0,
@@ -181,16 +197,19 @@ function setup() {
 	divInfo.style('text-align', 'right');
 
 	let intAngle = query('a');
-	if (!isNaN(intAngle))
+	if (!isNaN(intAngle)) {
 		angle = (intAngle % 360) * PI / 180;
+	}
 
 	let intCount = query('n');
-	if (!isNaN(intCount) && intCount >= 1 && intCount <= 72)
+	if (!isNaN(intCount) && intCount >= 1 && intCount <= 72) {
 		count = intCount;
+	}
 
 	let intSpeed = query('s');
-	if (!isNaN(intSpeed) && intSpeed >= 0 && intSpeed <= 200)
+	if (!isNaN(intSpeed) && intSpeed >= 0 && intSpeed <= 200) {
 		speed = intSpeed;
+	}
 
 	slideCount = createSlider(1, 72, count, 1);
 	slideSpeed = createSlider(0, 200, speed);
@@ -199,18 +218,21 @@ function setup() {
 	slideSpeed.changed(makeLink);
 
 	chkDot    = createCheckbox('dot', getBool('d', false));
+	chkFunc   = createCheckbox('sine', getBool('f', false));
 	chkRGB    = createCheckbox('RGB', getBool('r', true));
 	chkLines  = createCheckbox('lines', getBool('l', true));
 	chkCircle = createCheckbox('circle', getBool('c', true));
 	chkClock  = createCheckbox('clockwise', getBool('w', false));
 
 	chkDot.style('font-family', 'Calibri, Arial, sans-serif');
+	chkFunc.style('font-family', 'Calibri, Arial, sans-serif');
 	chkRGB.style('font-family', 'Calibri, Arial, sans-serif');
 	chkLines.style('font-family', 'Calibri, Arial, sans-serif');
 	chkCircle.style('font-family', 'Calibri, Arial, sans-serif');
 	chkClock.style('font-family', 'Calibri, Arial, sans-serif');
 
 	chkDot.changed(makeLink);
+	chkFunc.changed(changeFunc);
 	chkRGB.changed(makeLink);
 	chkLines.changed(makeLink);
 	chkCircle.changed(makeLink);
@@ -223,8 +245,9 @@ function setup() {
 	newBaselines();
 	calcPositions();
 	step = speed / 1000;
-	if (chkClock.checked())
+	if (chkClock.checked()) {
 		step = -step;
+	}
 }
 
 function draw() {
@@ -234,16 +257,17 @@ function draw() {
 		count = n;
 		newBaselines();
 	}
-	
+
 	// Check variable speed slider
 	const v = slideSpeed.value();
 	if (v != speed) {
 		speed = v;
 		step = speed / 1000;
-		if (chkClock.checked())
+		if (chkClock.checked()) {
 			step = -step;
+		}
 	}
-	
+
 	// Clear canvas
 	background(bgCol);
 
@@ -265,9 +289,33 @@ function draw() {
 	// Draw base lines for projection
 	// (two opposite radii = one diameter)
 	if (chkLines.checked()) {
-		for (const base of baseLines)
+		for (const base of baseLines) {
 			line(base.sx1, base.sy1, base.sx2, base.sy2);
+		}
 	}
+
+	// Draw sine function
+	if (chkFunc.checked()) {
+		noFill();
+		stroke(0, 0, 255);
+		strokeWeight(lineWidth * 2 + 1);
+		beginShape();
+		let x = zeroX;
+		for (const y of sine) {
+			vertex(x, y);
+			x += 2;
+		}
+		endShape();
+		stroke(fgCol);
+		strokeWeight(lineWidth);
+
+		// Next point of sine function
+		sine.unshift(scaleY(cos(angle - HALF_PI)));
+		if (sine.length > sineLen) {
+			sine.pop();
+		}
+	}
+
 
 	// Project circling vector (x,y) on each line
 	// (separate loop or else circles and lines will intersect)
@@ -280,7 +328,7 @@ function draw() {
 		if (chkRGB.checked())
 			fill(base.c);                 // RGB colour
 		circle(scaleX(px), scaleY(py), ballSize);
-	}	
+	}
 
 	// Draw dot moving around in a circle
 	if (chkDot.checked()) {
@@ -290,6 +338,9 @@ function draw() {
 
 	// Advance time
 	angle += step;
-	if (angle >= TWO_PI || angle <= -TWO_PI)
-		angle = 0;
+	if (angle >= TWO_PI) {
+		angle -= TWO_PI;
+	} else if (angle <= -TWO_PI) {
+		angle += TWO_PI;
+	}
 }
