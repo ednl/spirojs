@@ -185,7 +185,7 @@ function setup() {
 		angle = (intAngle % 360) * PI / 180;
 
 	let intCount = query('n');
-	if (!isNaN(intCount) && intCount >= 2 && intCount <= 72)
+	if (!isNaN(intCount) && intCount >= 1 && intCount <= 72)
 		count = intCount;
 
 	let intSpeed = query('s');
