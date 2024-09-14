@@ -192,7 +192,7 @@ function setup() {
 	stroke(fgCol);
 	textSize(getTextsize());
 
-	divInfo = createDiv('<a href="https://twitter.com/ednl">Twitter</a> | <a href="https://github.com/ednl/spirojs">Github</a> | <a href="https://youtu.be/snHKEpCv0Hk">Numberphile</a>');
+	divInfo = createDiv('<a href="https://mastodon.social/@ednl">Mastodon</a> | <a href="https://github.com/ednl/spirojs">Github</a> | <a href="https://youtu.be/snHKEpCv0Hk">Numberphile</a>');
 	divInfo.style('font-family', 'Calibri, Arial, sans-serif');
 	divInfo.style('text-align', 'right');
 
